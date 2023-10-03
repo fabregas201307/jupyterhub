@@ -1,0 +1,87 @@
+hub:
+  image:
+    name: "jupyterhub/k8s-hub"
+  tolerations:
+  - key: "owner"
+    operator: "Equal"
+    value: "fiquant"
+    effect: "NoSchedule"
+  nodeSelector:
+    owner: "fiquant"
+  config:
+    JupyterHub:
+      authenticator_class: ldapauthenticator.LDAPAuthenticator
+      # spawner_class: "kuberspawner.KubeSpawner"
+      shutdown_on_logout: true
+    LDAPAuthenticator:
+      server_address: "P00UE0002.ac.lp.acml.com"
+      server_port: 389
+      lookup_dn: true
+      lookup_dn_search_filter: "({login_attr}={login})"
+      lookup_dn_search_user: "abalphajupyterhub@ac.lp.acml.com"
+      lookup_dn_search_password: "NYf[bK2C"
+      lookup_dn_user_dn_attribute: "cn"
+      user_search_base: "DC=ac,DC=lp,DC=acml,DC=com"
+      user_attribute: "sAMAccountName"
+      allowed_groups:
+      - "CN=abalphajupyterhubgroup,OU=DeptGroups,OU=Groups,DC=ac,DC=lp,DC=acml,DC=com"
+singleuser:
+  image:
+    name: "acr/abalpha-jupyter:forhub"
+    tag: "latest"
+    pullPolicy: "Always"
+  memory:
+    guarantee: "30G"
+    limit: "30G"
+    # cpu:
+    #   guarantee: "3000m"
+    #   limit: "3000m"
+  uid: 105
+  cmd: ["/bin/bash", "-c", "--", "jupyterhub-singleuser --preferred-dir=/"]
+  cloudMetadata:
+    blockWithIptables: false
+  startTimeout: 300
+  extraTolerations:
+  - key: "owner"
+    operator: "Equal"
+    value: "fiquant"
+    effect: "NoSchedule"
+  nodeSelector:
+    owner: "fiquant"
+  storage:
+    type: none
+    extraVolumes:
+      - name: nfs-fiquantit-prod
+        persistentVolumeClaim:
+          claimName: nfs-fiquantit-prod
+    extraVolumeMounts:
+      - name: nfs-fiquantit-prod
+        mountPath: /fiquantit-nfs
+scheduling:
+  userScheduler:
+    enabled: false
+    tolerations:
+    - key: "owner"
+      operator: "Equal"
+      value: "fiquant"
+      effect: "NoSchedule"
+    nodeSelector:
+      owner: "fiquant"
+prePuller:
+  hook:
+    enabled: false
+  continuous:
+    enabled: false
+proxy:
+  chp:
+    image:
+      name: "jupyterhub/configurable-http-proxy"
+    tolerations:
+    - key: "owner"
+      operator: "Equal"
+      value: "fiquant"
+      effect: "NoSchedule"
+    nodeSelector:
+      owner: "fiquant"
+  service:
+    type: ClusterIP
